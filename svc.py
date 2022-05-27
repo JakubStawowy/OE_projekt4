@@ -10,7 +10,10 @@ import pandas as pd
 # print(numberOfAtributtes)
 
 from sklearn import model_selection
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier
 from sklearn.model_selection import StratifiedKFold
+from sklearn.naive_bayes import GaussianNB
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.svm import SVC
 
@@ -22,6 +25,8 @@ from sklearn.svm import SVC
 # print(scores.mean())
 
 import random
+
+from sklearn.tree import DecisionTreeClassifier
 
 
 def SVCParameters(numberFeatures, icls):
@@ -66,27 +71,27 @@ def SVCParametersFitness(y, df, numberOfAtributtes, individual):
     return resultSum / split,
 
 
-def mutationSVC(individual):
-    numberParamer = random.randint(0, len(individual) - 1)
-    if numberParamer == 0:
-        # kernel
-        listKernel = ["linear", "rbf", "poly", "sigmoid"]
-        individual[0] = listKernel[random.randint(0, 3)]
-    elif numberParamer == 1:
-        # C
-        k = random.uniform(0.1, 100)
-        individual[1] = k
-    elif numberParamer == 2:
-        # degree
-        individual[2] = random.uniform(0.1, 5)
-    elif numberParamer == 3:
-        # gamma
-        gamma = random.uniform(0.01, 5)
-        individual[3] = gamma
-    elif numberParamer == 4:
-        # coeff
-        coeff = random.uniform(0.1, 20)
-        individual[2] = coeff
+# def mutationSVC(individual):
+#     numberParamer = random.randint(0, len(individual) - 1)
+#     if numberParamer == 0:
+#         # kernel
+#         listKernel = ["linear", "rbf", "poly", "sigmoid"]
+#         individual[0] = listKernel[random.randint(0, 3)]
+#     elif numberParamer == 1:
+#         # C
+#         k = random.uniform(0.1, 100)
+#         individual[1] = k
+#     elif numberParamer == 2:
+#         # degree
+#         individual[2] = random.uniform(0.1, 5)
+#     elif numberParamer == 3:
+#         # gamma
+#         gamma = random.uniform(0.01, 5)
+#         individual[3] = gamma
+#     elif numberParamer == 4:
+#         # coeff
+#         coeff = random.uniform(0.1, 20)
+#         individual[2] = coeff
 
 
 # # toolbox.register('individual', SVCParameters, numberOfAtributtes, creator.Individual)
@@ -134,6 +139,18 @@ def SVCParametersFeatureFitness(y, df, numberOfAtributtes, individual):
     df_norm = mms.fit_transform(dfSelectedFeatures)
     estimator = SVC(kernel=individual[0], C=individual[1], degree=individual[2], gamma=individual[3],
                     coef0=individual[4], random_state=101)
+
+
+
+    # estimator = DecisionTreeClassifier()
+    # estimator = AdaBoostClassifier()
+    # estimator = GradientBoostingClassifier()
+    # estimator = GaussianNB()
+    # estimator = LinearDiscriminantAnalysis()
+
+
+
+
     resultSum = 0
     for train, test in cv.split(df_norm, y):
         estimator.fit(df_norm[train], y[train])
@@ -147,29 +164,29 @@ def SVCParametersFeatureFitness(y, df, numberOfAtributtes, individual):
     return resultSum / split,
 
 
-# def mutationSVC(individual):
-#     numberParamer = random.randint(0, len(individual) - 1)
-#     if numberParamer == 0:
-#         # kernel
-#         listKernel = ["linear", "rbf", "poly", "sigmoid"]
-#         individual[0] = listKernel[random.randint(0, 3)]
-#     elif numberParamer == 1:
-#         # C
-#         k = random.uniform(0.1, 100)
-#         individual[1] = k
-#     elif numberParamer == 2:
-#         # degree
-#         individual[2] = random.uniform(0.1, 5)
-#     elif numberParamer == 3:
-#         # gamma
-#         gamma = random.uniform(0.01, 1)
-#         individual[3] = gamma
-#     elif numberParamer == 4:
-#         # coeff
-#         coeff = random.uniform(0.1, 1)
-#         individual[2] = coeff
-#     else:  # genetyczna selekcja cech
-#         if individual[numberParamer] == 0:
-#             individual[numberParamer] = 1
-#         else:
-#             individual[numberParamer] = 0
+def mutationSVC(individual):
+    numberParamer = random.randint(0, len(individual) - 1)
+    if numberParamer == 0:
+        # kernel
+        listKernel = ["linear", "rbf", "poly", "sigmoid"]
+        individual[0] = listKernel[random.randint(0, 3)]
+    elif numberParamer == 1:
+        # C
+        k = random.uniform(0.1, 100)
+        individual[1] = k
+    elif numberParamer == 2:
+        # degree
+        individual[2] = random.uniform(0.1, 5)
+    elif numberParamer == 3:
+        # gamma
+        gamma = random.uniform(0.01, 1)
+        individual[3] = gamma
+    elif numberParamer == 4:
+        # coeff
+        coeff = random.uniform(0.1, 1)
+        individual[2] = coeff
+    else:  # genetyczna selekcja cech
+        if individual[numberParamer] == 0:
+            individual[numberParamer] = 1
+        else:
+            individual[numberParamer] = 0

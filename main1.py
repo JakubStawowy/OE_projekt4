@@ -9,34 +9,51 @@ from sklearn import model_selection
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.svm import SVC
 
+
 from crossover import arithmetic_crossover, linear_crossover, blend_crossover_alpha, blend_crossover_alpha_beta, \
     average_crossover
-from svc import SVCParameters, SVCParametersFitness, mutationSVC
+from svc import SVCParameters, SVCParametersFitness, mutationSVC, SVCParametersFeatures
 
 realRepresentation = True
-minimum = True
+minimum = False
+is_selection = False
 
 pd.set_option('display.max_columns', None)
-df = pd.read_csv("data.csv", sep=',')
-# df = pd.read_csv("data.csv", sep=r'\s*,\s*')
-# print(df.columns.tolist())
-y = df['Status']
-df.drop('Status', axis=1, inplace=True)
-df.drop('ID', axis=1, inplace=True)
-df.drop('Recording', axis=1, inplace=True)
-numberOfAtributtes = len(df.columns)
-print(numberOfAtributtes)
+df = pd.read_csv("heart.csv", sep=',')
+# df = pd.read_csv("data.csv", sep=',')
+
+y = df['target']
+df.drop('target', axis=1, inplace=True)
+
+# y = df['Status']
+# df.drop('Status', axis=1, inplace=True)
+# df.drop('ID', axis=1, inplace=True)
+# df.drop('Recording', axis=1, inplace=True)
 
 mms = MinMaxScaler()
 df_norm = mms.fit_transform(df)
 clf = SVC()
 scores = model_selection.cross_val_score(clf, df_norm, y,
                                          cv=5, scoring='accuracy', n_jobs=-1)
-print(scores.mean())
+print(f"Accuracy for default configuration: {scores.mean() * 100}%")
 
-ind = ['poly', 0.3690320297276768, 1.9084110197644817, 0.1053757953826651,
-       8.515094980694283]
-print(SVCParametersFitness(y, df, numberOfAtributtes, ind))
+if is_selection:
+    df.drop('sex', axis=1, inplace=True)
+    df.drop('chol', axis=1, inplace=True)
+    df.drop('cp', axis=1, inplace=True)
+    # df.drop('MFCC1', axis=1, inplace=True)
+    # df.drop('Jitter_rel', axis=1, inplace=True)
+    # df.drop('Delta12', axis=1, inplace=True)
+
+
+numberOfAtributtes = len(df.columns)
+print(numberOfAtributtes)
+
+
+
+# ind = ['poly', 0.3690320297276768, 1.9084110197644817, 0.1053757953826651,
+#        8.515094980694283]
+# print(SVCParametersFitness(y, df, numberOfAtributtes, ind))
 
 # # Tworzenie osobnika w reprezentacji binarnej
 # def individual(icls):
@@ -94,7 +111,7 @@ if __name__ == '__main__':
 
     toolbox = base.Toolbox()
     # toolbox.register('individual', individual, creator.Individual)
-    toolbox.register('individual', SVCParameters, numberOfAtributtes, creator.Individual)
+    toolbox.register('individual', SVCParametersFeatures, numberOfAtributtes, creator.Individual)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     # toolbox.register("evaluate", fitnessFunction)
     toolbox.register("evaluate", SVCParametersFitness, y, df, numberOfAtributtes)
@@ -126,7 +143,7 @@ if __name__ == '__main__':
     # toolbox.register("mutate", tools.mutUniformInt, low=-10, up=10, indpb=2)
     toolbox.register("mutate", mutationSVC)
 
-    sizePopulation = 100
+    sizePopulation = 10
     probabilityMutation = 0.2
     probabilityCrossover = 0.8
     numberIteration = 100
@@ -140,8 +157,8 @@ if __name__ == '__main__':
 
     g = 0
     while g < numberIteration:
+
         g = g + 1
-        print("-- Generation %i --" % g)
 
         offspring = toolbox.select(pop, len(pop))
 
@@ -200,6 +217,27 @@ if __name__ == '__main__':
         # print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
 
     print("-- End of (successful) evolution --")
+    print("Best individual:")
+    print(f"Kernel: {best_ind[0]} | {best_ind[1]}, {best_ind[2]}, {best_ind[3]}, {best_ind[4]}")
+    print(f"Fitness value {best_ind.fitness.values[0]}")
+    print("=====================")
+
+    mms = MinMaxScaler()
+    df_norm = mms.fit_transform(df)
+    clf = SVC(kernel=best_ind[0], C=best_ind[1], degree=best_ind[2], gamma=best_ind[3],
+              coef0=best_ind[4], random_state=101)
+
+
+    # clf = DecisionTreeClassifier(min_weight_fraction_leaf=best_ind[1], ccp_alpha=best_ind[2], random_state=101)
+
+
+    scores = model_selection.cross_val_score(clf, df_norm, y,
+                                             cv=5, scoring='accuracy', n_jobs=-1)
+
+    if is_selection:
+        print("Accuracy after optimalisation with selection ")
+    print(f"Accuracy after optimalisation: {scores.mean() * 100}%")
+
 
     plot(g, std_array, "Odchylenie standardowe w kolejnej iteracji")
     plot(g, avg_array, "Średnia w kolejnej iteracji")
