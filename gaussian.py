@@ -1,37 +1,21 @@
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.svm import SVC
 from sklearn import metrics
+from sklearn.gaussian_process.kernels import RBF
 
 import random
 
-
-def SVCParameters(numberFeatures, icls):
-    genome = list()
-    # kernel
-    listKernel = ["linear", "rbf", "poly", "sigmoid"]
-    genome.append(listKernel[random.randint(0, 3)])
-    # c
-    k = random.uniform(0.1, 100)
-    genome.append(k)
-    # degree
-    genome.append(random.randint(1, 5))
-    # gamma
-    gamma = random.uniform(0.001, 5)
-    genome.append(gamma)
-    # coeff
-    coeff = random.uniform(0.01, 10)
-    genome.append(coeff)
-    return icls(genome)
+from sklearn.gaussian_process import GaussianProcessClassifier
 
 
-def SVCParametersFitness(y, df, numberOfAtributtes, individual):
+def GAUSSParametersFitness(y, df, numberOfAtributtes, individual):
     split = 5
     cv = StratifiedKFold(n_splits=split)
     mms = MinMaxScaler()
     df_norm = mms.fit_transform(df)
-    estimator = SVC(kernel=individual[0], C=individual[1], degree=individual[2], gamma=individual[3],
-                    coef0=individual[4], random_state=101)
+
+    estimator = GaussianProcessClassifier(kernel=individual[0], n_restarts_optimizer=individual[1],
+                                          max_iter_predict=individual[2], random_state=101)
     resultSum = 0
     for train, test in cv.split(df_norm, y):
         estimator.fit(df_norm[train], y[train])
@@ -44,28 +28,22 @@ def SVCParametersFitness(y, df, numberOfAtributtes, individual):
     return resultSum / split,
 
 
-def SVCParametersFeatures(numberFeatures, icls):
+def GAUSSParametersFeatures(numberFeatures, icls):
     genome = list()
     # kernel
-    listKernel = ["linear", "rbf", "poly", "sigmoid"]
-    genome.append(listKernel[random.randint(0, 3)])
-    # c
-    k = random.uniform(0.1, 100)
+    kernel = random.random() * RBF()
+    genome.append(kernel)
+    # n_restarts_optimizer
+    k = random.randint(0, 20)
     genome.append(k)
-    # degree
-    genome.append(random.uniform(0.1, 5))
-    # gamma
-    gamma = random.uniform(0.001, 5)
-    genome.append(gamma)
-    # coeff
-    coeff = random.uniform(0.01, 10)
-    genome.append(coeff)
+    # max_iter_predict
+    genome.append(random.randint(100, 300))
     for i in range(0, numberFeatures):
         genome.append(random.randint(0, 1))
     return icls(genome)
 
 
-def SVCParametersFeatureFitness(y, df, numberOfAtributtes, individual):
+def GAUSSParametersFeatureFitness(y, df, numberOfAtributtes, individual):
     split = 5
     cv = StratifiedKFold(n_splits=split)
 
@@ -73,13 +51,13 @@ def SVCParametersFeatureFitness(y, df, numberOfAtributtes, individual):
     for i in range(numberOfAtributtes, len(individual)):
         if individual[i] == 0:  # gdy atrybut ma zero to usuwamy cechę
             listColumnsToDrop.append(i - numberOfAtributtes)
-    dfSelectedFeatures = df.drop(df.columns[listColumnsToDrop], axis=1,
-                                 inplace=False)
+    dfSelectedFeatures = df.drop(df.columns[listColumnsToDrop], axis=1, inplace=False)
 
     mms = MinMaxScaler()
     df_norm = mms.fit_transform(dfSelectedFeatures)
-    estimator = SVC(kernel=individual[0], C=individual[1], degree=individual[2], gamma=individual[3],
-                    coef0=individual[4], random_state=101)
+
+    estimator = GaussianProcessClassifier(kernel=individual[0], n_restarts_optimizer=individual[1],
+                                          max_iter_predict=individual[2], random_state=101)
 
     resultSum = 0
     for train, test in cv.split(df_norm, y):
@@ -94,27 +72,19 @@ def SVCParametersFeatureFitness(y, df, numberOfAtributtes, individual):
     return resultSum / split,
 
 
-def mutationSVC(individual):
+def mutationGAUSS(individual):
     numberParamer = random.randint(0, len(individual) - 1)
     if numberParamer == 0:
         # kernel
-        listKernel = ["linear", "rbf", "poly", "sigmoid"]
-        individual[0] = listKernel[random.randint(0, 3)]
+        kernel = random.random() * RBF()
+        individual[0] = kernel
     elif numberParamer == 1:
-        # C
-        k = random.uniform(0.1, 100)
+        # n_restarts_optimizer
+        k = random.randint(0, 20)
         individual[1] = k
     elif numberParamer == 2:
-        # degree
-        individual[2] = random.uniform(0.1, 5)
-    elif numberParamer == 3:
-        # gamma
-        gamma = random.uniform(0.01, 1)
-        individual[3] = gamma
-    elif numberParamer == 4:
-        # coeff
-        coeff = random.uniform(0.1, 1)
-        individual[2] = coeff
+        # max_iter_predict
+        individual[2] = random.randint(100, 300)
     else:  # genetyczna selekcja cech
         if individual[numberParamer] == 0:
             individual[numberParamer] = 1

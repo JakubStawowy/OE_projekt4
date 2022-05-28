@@ -3,7 +3,7 @@ import random
 from deap import tools
 
 
-def algorithm(numberIteration, probabilityMutation, toolbox, pop):
+def algorithm(numberIteration, probabilityMutation, probabilityCrossover, toolbox, pop):
 
     std_array, avg_array, fit_array, gen_array = [], [], [], []
     g = 0
@@ -16,6 +16,14 @@ def algorithm(numberIteration, probabilityMutation, toolbox, pop):
 
         offspring = list(map(toolbox.clone, offspring))
 
+        for child1, child2 in zip(offspring[::2], offspring[1::2]):
+
+            if random.random() < probabilityCrossover:
+                toolbox.mate(child1, child2)
+
+                del child1.fitness.values
+                del child2.fitness.values
+
         for mutant in offspring:
             if random.random() < probabilityMutation:
                 toolbox.mutate(mutant)
@@ -23,7 +31,6 @@ def algorithm(numberIteration, probabilityMutation, toolbox, pop):
 
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
 
-        # test_fitness = toolbox.evaluate([8, 3, 5, 6, 2])
         fitnesses = map(toolbox.evaluate, invalid_ind)
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = fit
